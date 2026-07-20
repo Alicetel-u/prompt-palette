@@ -34,3 +34,20 @@ main{max-width:1440px;margin:auto;padding:48px 28px 80px}.hero-row{display:flex;
 .cold-details{display:block}.cold-details>.field+.field{margin-top:16px}.cold-details .choice-tiles button{background:var(--surface)}
 @media(max-width:780px){.choice-tiles,.choice-tiles.compact{grid-template-columns:repeat(2,minmax(0,1fr))}.choice-tiles button{min-height:48px;padding:8px}.choice-tiles.compact button{min-height:45px}.cold-details{padding:13px}}
 @media(max-width:380px){.choice-tiles button{font-size:8px}.choice-tiles button>i{width:21px;height:21px}}
+/* Desktop readability: keep frequently used detail controls visible and legible. */
+@media(min-width:781px){
+  body{font-size:16px}
+  .hero-row p{font-size:16px;line-height:1.7}
+  .section-head h2{font-size:18px}.step{font-size:11px}.head-actions button,.text-btn{font-size:13px}
+  .drop-empty strong{font-size:15px}.drop-empty span{font-size:13px}.drop-empty small{font-size:11px}
+  .template-card b,.main-templates .template-card b{font-size:14px}.template-card small,.main-templates .template-card small{font-size:11px;line-height:1.5}
+  .field>span,.prompt-editor>span,.editor-fields label>span{font-size:11px;margin-bottom:9px}
+  .quote-input input{font-size:16px}.segmented button,.chips button,.checks label{font-size:12px}
+  .impact-options button,.choice-tiles button{font-size:12px;line-height:1.4}
+  .details-toggle{font-size:12px;pointer-events:none;color:var(--text);justify-content:flex-start;font-weight:700;padding-top:17px}
+  .details-toggle svg:last-child{display:none}
+  .prompt-panel-head>div{font-size:14px}.selected-template small{font-size:9px}.selected-template strong{font-size:14px}
+  .prompt-text textarea{font-size:13px;line-height:1.85}.count{font-size:10px}.copy-primary{font-size:14px}
+  .mini-actions button{font-size:11px}.privacy-note b,.privacy-note small{font-size:10px;line-height:1.5}
+  .requirements span{font-size:10px}
+}

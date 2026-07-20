@@ -66,7 +66,7 @@ export function App(){
   const [history,setHistory]=useState<HistoryItem[]>(()=>read('pp-history',[]));
   const [dark,setDark]=useState(()=>read('pp-dark',true));
   const [search,setSearch]=useState(''),[category,setCategory]=useState('すべて');
-  const [libraryOpen,setLibraryOpen]=useState(false),[editor,setEditor]=useState<Template|null>(null),[historyOpen,setHistoryOpen]=useState(false),[detailOpen,setDetailOpen]=useState(false);
+  const [libraryOpen,setLibraryOpen]=useState(false),[editor,setEditor]=useState<Template|null>(null),[historyOpen,setHistoryOpen]=useState(false),[detailOpen,setDetailOpen]=useState(()=>typeof window!=='undefined'&&window.matchMedia('(min-width: 781px)').matches);
   const [toast,setToast]=useState<Toast>(null);
   const active=templates.find(t=>t.id===activeId)||templates[0];
 
