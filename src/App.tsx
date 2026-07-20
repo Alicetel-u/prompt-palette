@@ -50,7 +50,7 @@ export function App(){
   const [source,setSource]=useState<ImageSlot>(null),[style,setStyle]=useState<ImageSlot>(null);
   const [dialogue,setDialogue]=useState('！'),[custom,setCustom]=useState('');
   const [textMode,setTextMode]=useState<'none'|'dialogue'|'allow'>('none');
-  const [ratio,setRatio]=useState('16:9'),[framing,setFraming]=useState('顔アップ'),[expression,setExpression]=useState('驚き');
+  const [ratio,setRatio]=useState('9:16'),[framing,setFraming]=useState('顔アップ'),[expression,setExpression]=useState('驚き');
   const [intensity,setIntensity]=useState(2),[styleStrength,setStyleStrength]=useState(2);
   const [effects,setEffects]=useState<string[]>(['集中線','激しい演出']);
   const [styleParts,setStyleParts]=useState<string[]>(['色使い','線や塗りの質感','ライティング','全体の雰囲気']);
@@ -101,7 +101,7 @@ export function App(){
   const choose=(t:Template)=>{setMode(t.id==='style'?'style':'prompt');setActiveId(t.id);if(t.id==='comic'){setTextMode('dialogue');if(!dialogue)setDialogue('！')}if(t.id==='cold-anger'&&dialogue==='！')setDialogue('');setLibraryOpen(false)};
   async function copyPrompt(){if(active.id==='cold-anger'&&!source){setToast({text:'参考画像を追加してください'});return}if(active.id==='cold-anger'&&!dialogue.trim()){setToast({text:'セリフ本文を入力してください'});return}await navigator.clipboard.writeText(prompt);setTemplates(v=>v.map(x=>x.id===active.id?{...x,uses:x.uses+1,updated:Date.now()}:x));setHistory(v=>[{id:uid(),prompt,template:active.name,at:Date.now()},...v].slice(0,50));setToast({text:'プロンプトをコピーしました',kind:'ok'})}
   const swap=()=>{const a=source;setSource(style);setStyle(a)};
-  const reset=()=>{setDialogue(active.id==='cold-anger'?'':'！');setTextImpact('静かな圧のある文字');setColdExpression('無表情・ジト目');setColdFraming('上半身＋顔アップ');setColdView('一段下から見上げる');setColdBackground('白背景');setTextColor('黒');setTextPlacement('自動');setCharacterFidelity('最優先');setCustom('');setTextMode(active.id==='comic'?'dialogue':'none');setRatio('16:9');setFraming('顔アップ');setExpression('驚き');setIntensity(2);setStyleStrength(2);setEffects(['集中線','激しい演出']);setToast({text:'設定を初期化しました'})};
+  const reset=()=>{setDialogue(active.id==='cold-anger'?'':'！');setTextImpact('静かな圧のある文字');setColdExpression('無表情・ジト目');setColdFraming('上半身＋顔アップ');setColdView('一段下から見上げる');setColdBackground('白背景');setTextColor('黒');setTextPlacement('自動');setCharacterFidelity('最優先');setCustom('');setTextMode(active.id==='comic'?'dialogue':'none');setRatio('9:16');setFraming('顔アップ');setExpression('驚き');setIntensity(2);setStyleStrength(2);setEffects(['集中線','激しい演出']);setToast({text:'設定を初期化しました'})};
   const exportData=()=>{const blob=new Blob([JSON.stringify({version:1,templates,history},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`prompt-palette-${new Date().toISOString().slice(0,10)}.json`;a.click();URL.revokeObjectURL(a.href);setToast({text:'ライブラリを書き出しました',kind:'ok'})};
   const importData=(file?:File)=>{if(!file)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(String(r.result));if(Array.isArray(d.templates))setTemplates(d.templates);if(Array.isArray(d.history))setHistory(d.history);setToast({text:'ライブラリを復元しました',kind:'ok'})}catch{setToast({text:'読み込めないファイルです'})}};r.readAsText(file)};
 
@@ -119,6 +119,8 @@ export function App(){
         <div className="left-column">
           <div className="section-head"><div><span className="step">01</span><h2>{mode==='prompt'?'プロンプトを適用する画像':'変更元とテイスト参考'}</h2></div><div className="head-actions">{mode==='style'&&<button onClick={swap} disabled={!source&&!style}><ArrowLeftRight size={15}/>入れ替え</button>}<button onClick={()=>{setSource(null);if(mode==='style')setStyle(null)}} disabled={!source&&!style}><Trash2 size={15}/>クリア</button></div></div>
           {mode==='prompt'?<div className="single-image"><ImageDrop slot={1} label="画像を入れる" subtitle="この画像に選んだプロンプトを適用します" value={source} onChange={setSource}/><div className="single-image-guide"><FileImage size={21}/><div><b>まず、変更したい画像を1枚</b><span>次に下の見本画像付きテンプレートを選びます</span></div></div></div>:<div className="image-pair"><ImageDrop slot={1} label="変更したい画像" subtitle="被写体・内容のベース" value={source} onChange={setSource}/><ImageDrop slot={2} label="テイスト参考" subtitle="色・質感・空気感" value={style} onChange={setStyle}/></div>}
+
+          <div className="output-format-bar"><div className="output-format-copy"><span>OUTPUT FORMAT</span><b>生成画像の比率</b></div><ChoiceTiles compact value={ratio} options={['9:16','16:9','1:1','4:3','3:4']} onChange={setRatio}/></div>
 
           {mode==='prompt'&&<><div className="section-head templates-title"><div><span className="step">02</span><h2>見本からプロンプトを選ぶ</h2></div><button className="text-btn" onClick={()=>setLibraryOpen(true)}>ライブラリを開く <ChevronDown size={15}/></button></div>
           <div className="template-strip main-templates">{templates.filter(t=>t.id!=='style').slice().sort((a,b)=>Number(b.favorite)-Number(a.favorite)).slice(0,6).map(t=><button key={t.id} className={`template-card ${activeId===t.id?'active':''}`} style={{'--accent':t.accent} as React.CSSProperties} onClick={()=>choose(t)}><span className="template-icon">{t.thumbnail?<img src={t.thumbnail}/>:t.icon}</span><span><b>{t.name}</b><small>{t.description}</small></span>{activeId===t.id&&<i><Check size={12}/></i>}</button>)}</div></>}
@@ -142,7 +144,7 @@ export function App(){
             {active.id!=='cold-anger'&&<>{active.id==='comic'&&<label className="field wide"><span>セリフ</span><div className="quote-input"><MessageSquareText size={17}/><span>「</span><input value={dialogue} onChange={e=>setDialogue(e.target.value)} placeholder="セリフを入力"/><span>」</span></div></label>}
             {active.id==='free'&&<label className="field wide"><span>追加したい指示</span><textarea value={custom} onChange={e=>setCustom(e.target.value)} placeholder="作りたい画像を自由に入力してください"/></label>}
             <div className="field"><span>文字</span><div className="segmented"><button className={textMode==='none'?'selected':''} onClick={()=>setTextMode('none')}>なし</button><button className={textMode==='dialogue'?'selected':''} onClick={()=>setTextMode('dialogue')}>セリフのみ</button><button className={textMode==='allow'?'selected':''} onClick={()=>setTextMode('allow')}>あり</button></div></div>
-            <div className="field wide"><span>画像比率</span><ChoiceTiles compact value={ratio} options={['16:9','1:1','9:16','4:3','3:4']} onChange={setRatio}/></div>
+
             <div className="field wide"><span>画角</span><ChoiceTiles value={framing} options={['顔アップ','上半身','全身','ローアングル','俯瞰','斜め構図']} onChange={setFraming}/></div>
             <div className="field wide"><span>表情</span><ChoiceTiles value={expression} options={['驚き','怒り','笑顔','真剣','コミカル','泣き']} onChange={setExpression}/></div>
             <div className="field wide"><span>クイック追加</span><div className="chips">{['集中線','激しい演出','スピード線','強い遠近感','コミカル','映画的な光'].map(x=><button key={x} className={effects.includes(x)?'on':''} onClick={()=>toggle(x,effects,setEffects)}>{effects.includes(x)&&<Check size={12}/>} {x}</button>)}</div></div>
