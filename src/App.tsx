@@ -29,7 +29,8 @@ function ImageDrop({slot,label,subtitle,value,onChange}: {slot:number;label:stri
 
 export function App(){
   const [templates,setTemplates]=useState<Template[]>(()=>read('pp-templates',STARTERS));
-  const [activeId,setActiveId]=useState(()=>read('pp-active','thumb'));
+  const [activeId,setActiveId]=useState(()=>{const saved=read<string>('pp-active','thumb');return saved==='style'?'thumb':saved});
+  const [mode,setMode]=useState<'prompt'|'style'>('prompt');
   const [source,setSource]=useState<ImageSlot>(null),[style,setStyle]=useState<ImageSlot>(null);
   const [dialogue,setDialogue]=useState('！'),[custom,setCustom]=useState('');
   const [textMode,setTextMode]=useState<'none'|'dialogue'|'allow'>('none');
@@ -67,7 +68,7 @@ export function App(){
   const categories=['すべて',...Array.from(new Set(templates.map(t=>t.category)))];
   const filtered=templates.filter(t=>(category==='すべて'||t.category===category)&&(`${t.name} ${t.description}`.toLowerCase().includes(search.toLowerCase()))).sort((a,b)=>Number(b.favorite)-Number(a.favorite)||b.uses-a.uses);
   const toggle=(value:string,list:string[],set:(v:string[])=>void)=>set(list.includes(value)?list.filter(x=>x!==value):[...list,value]);
-  const choose=(t:Template)=>{setActiveId(t.id);setTemplates(v=>v.map(x=>x.id===t.id?{...x,uses:x.uses+1,updated:Date.now()}:x));if(t.id==='comic')setTextMode('dialogue');setLibraryOpen(false)};
+  const choose=(t:Template)=>{setMode(t.id==='style'?'style':'prompt');setActiveId(t.id);setTemplates(v=>v.map(x=>x.id===t.id?{...x,uses:x.uses+1,updated:Date.now()}:x));if(t.id==='comic')setTextMode('dialogue');setLibraryOpen(false)};
   async function copyPrompt(){await navigator.clipboard.writeText(prompt);setHistory(v=>[{id:uid(),prompt,template:active.name,at:Date.now()},...v].slice(0,50));setToast({text:'プロンプトをコピーしました',kind:'ok'})}
   const swap=()=>{const a=source;setSource(style);setStyle(a)};
   const reset=()=>{setDialogue('！');setCustom('');setTextMode(active.id==='comic'?'dialogue':'none');setRatio('16:9');setFraming('顔アップ');setExpression('驚き');setIntensity(2);setStyleStrength(2);setEffects(['集中線','激しい演出']);setToast({text:'設定を初期化しました'})};
@@ -79,15 +80,20 @@ export function App(){
     <main>
       <section className="hero-row"><div><div className="eyebrow"><Zap size={13}/> PROMPT COMPOSER</div><h1>イメージを選んで、<br/><em>ことばを仕立てる。</em></h1><p>いつものプロンプトを、必要な部分だけ変えてすばやく完成。</p></div><div className="hero-stat"><span>現在のテンプレート</span><strong>{templates.length}</strong><small>すべて端末に保存されています</small></div></section>
 
+      <div className="mode-switch" role="tablist" aria-label="作成モード">
+        <button role="tab" aria-selected={mode==='prompt'} className={mode==='prompt'?'active':''} onClick={()=>{setMode('prompt');if(activeId==='style')setActiveId('thumb')}}><WandSparkles size={17}/><span><b>プロンプトを当てる</b><small>いつもの見本と定型文から作成</small></span></button>
+        <button role="tab" aria-selected={mode==='style'} className={mode==='style'?'active':''} onClick={()=>{setMode('style');setActiveId('style')}}><ArrowLeftRight size={17}/><span><b>2枚でテイスト変換</b><small>別画像の色・質感を参考にする</small></span></button>
+      </div>
+
       <section className="workspace-grid">
         <div className="left-column">
-          <div className="section-head"><div><span className="step">01</span><h2>参考画像</h2></div><div className="head-actions"><button onClick={swap} disabled={!source&&!style}><ArrowLeftRight size={15}/>入れ替え</button><button onClick={()=>{setSource(null);setStyle(null)}} disabled={!source&&!style}><Trash2 size={15}/>クリア</button></div></div>
-          <div className="image-pair"><ImageDrop slot={1} label="変更したい画像" subtitle="被写体・内容のベース" value={source} onChange={setSource}/><ImageDrop slot={2} label="テイスト参考" subtitle="色・質感・空気感" value={style} onChange={setStyle}/></div>
+          <div className="section-head"><div><span className="step">01</span><h2>{mode==='prompt'?'プロンプトを適用する画像':'変更元とテイスト参考'}</h2></div><div className="head-actions">{mode==='style'&&<button onClick={swap} disabled={!source&&!style}><ArrowLeftRight size={15}/>入れ替え</button>}<button onClick={()=>{setSource(null);if(mode==='style')setStyle(null)}} disabled={!source&&!style}><Trash2 size={15}/>クリア</button></div></div>
+          {mode==='prompt'?<div className="single-image"><ImageDrop slot={1} label="画像を入れる" subtitle="この画像に選んだプロンプトを適用します" value={source} onChange={setSource}/><div className="single-image-guide"><FileImage size={21}/><div><b>まず、変更したい画像を1枚</b><span>次に下の見本画像付きテンプレートを選びます</span></div></div></div>:<div className="image-pair"><ImageDrop slot={1} label="変更したい画像" subtitle="被写体・内容のベース" value={source} onChange={setSource}/><ImageDrop slot={2} label="テイスト参考" subtitle="色・質感・空気感" value={style} onChange={setStyle}/></div>}
 
-          <div className="section-head templates-title"><div><span className="step">02</span><h2>テンプレート</h2></div><button className="text-btn" onClick={()=>setLibraryOpen(true)}>すべて見る <ChevronDown size={15}/></button></div>
-          <div className="template-strip">{templates.slice().sort((a,b)=>Number(b.favorite)-Number(a.favorite)||b.uses-a.uses).slice(0,6).map(t=><button key={t.id} className={`template-card ${activeId===t.id?'active':''}`} style={{'--accent':t.accent} as React.CSSProperties} onClick={()=>choose(t)}><span className="template-icon">{t.thumbnail?<img src={t.thumbnail}/>:t.icon}</span><span><b>{t.name}</b><small>{t.description}</small></span>{activeId===t.id&&<i><Check size={12}/></i>}</button>)}</div>
+          {mode==='prompt'&&<><div className="section-head templates-title"><div><span className="step">02</span><h2>見本からプロンプトを選ぶ</h2></div><button className="text-btn" onClick={()=>setLibraryOpen(true)}>ライブラリを開く <ChevronDown size={15}/></button></div>
+          <div className="template-strip main-templates">{templates.filter(t=>t.id!=='style').slice().sort((a,b)=>Number(b.favorite)-Number(a.favorite)||b.uses-a.uses).slice(0,6).map(t=><button key={t.id} className={`template-card ${activeId===t.id?'active':''}`} style={{'--accent':t.accent} as React.CSSProperties} onClick={()=>choose(t)}><span className="template-icon">{t.thumbnail?<img src={t.thumbnail}/>:t.icon}</span><span><b>{t.name}</b><small>{t.description}</small></span>{activeId===t.id&&<i><Check size={12}/></i>}</button>)}</div></>}
 
-          <div className="section-head options-title"><div><span className="step">03</span><h2>調整</h2></div><button className="text-btn" onClick={reset}><RotateCcw size={14}/>リセット</button></div>
+          <div className="section-head options-title"><div><span className="step">{mode==='prompt'?'03':'02'}</span><h2>{mode==='prompt'?'必要なところだけ調整':'テイストの反映方法を調整'}</h2></div><button className="text-btn" onClick={reset}><RotateCcw size={14}/>リセット</button></div>
           <div className="controls-card">
             {active.id==='comic'&&<label className="field wide"><span>セリフ</span><div className="quote-input"><MessageSquareText size={17}/><span>「</span><input value={dialogue} onChange={e=>setDialogue(e.target.value)} placeholder="セリフを入力"/><span>」</span></div></label>}
             {active.id==='free'&&<label className="field wide"><span>追加したい指示</span><textarea value={custom} onChange={e=>setCustom(e.target.value)} placeholder="作りたい画像を自由に入力してください"/></label>}
