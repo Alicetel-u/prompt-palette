@@ -37,6 +37,12 @@ function ImageDrop({slot,label,subtitle,value,onChange}: {slot:number;label:stri
   </div>
 }
 
+const CHOICE_MARKS:Record<string,string>={'16:9':'▭','1:1':'□','9:16':'▯','4:3':'▰','3:4':'▥','顔アップ':'◎','上半身':'◉','全身':'○','ローアングル':'↗','俯瞰':'↘','斜め構図':'◇','驚き':'!','怒り':'#','笑顔':'☺','真剣':'—','コミカル':'☆','泣き':'…','最優先':'★','標準':'●','自然に調整':'○','無表情・ジト目':'—','冷たい怒り':'◆','呆れ・失望':'…','強く睨む':'▲','上半身＋顔アップ':'◉','顔のクローズアップ':'◎','一段下から見上げる':'↗','正面から見る':'→','斜め下から見上げる':'⤴','白背景':'□','黒背景':'■','単色背景':'▣','簡素な背景':'▤'};
+function ChoiceTiles({value,options,onChange,compact=false,color=false}:{value:string;options:string[];onChange:(value:string)=>void;compact?:boolean;color?:boolean}){
+  const tones:Record<string,string>={黒:'#111318',白:'#fff',赤:'#e24842',濃紺:'#172744'};
+  return <div className={`choice-tiles ${compact?'compact':''}`} role="radiogroup">{options.map(option=><button type="button" role="radio" aria-checked={value===option} key={option} className={value===option?'selected':''} onClick={()=>onChange(option)}>{color?<i className="color-dot" style={{background:tones[option]}}/>:<i>{CHOICE_MARKS[option]||'•'}</i>}<span>{option}</span>{value===option&&<Check size={13}/>}</button>)}</div>
+}
+
 export function App(){
   const [templates,setTemplates]=useState<Template[]>(()=>read('pp-templates',STARTERS));
   const [activeId,setActiveId]=useState(()=>{const saved=read<string>('pp-active','thumb');return saved==='style'?'thumb':saved});
@@ -124,21 +130,21 @@ export function App(){
               <div className="field wide"><span>テキストの迫力</span><div className="impact-options">{Object.keys(TEXT_IMPACT).map(x=><button key={x} className={textImpact===x?'selected':''} onClick={()=>setTextImpact(x)}>{x}</button>)}</div></div>
               <button className="details-toggle" onClick={()=>setDetailOpen(!detailOpen)}><Settings2 size={15}/>表情・構図・文字を詳細変更<ChevronDown size={15} className={detailOpen?'rotated':''}/></button>
               {detailOpen&&<div className="details-panel cold-details">
-                <label className="field"><span>キャラクター再現</span><select value={characterFidelity} onChange={e=>setCharacterFidelity(e.target.value)}><option>最優先</option><option>標準</option><option>自然に調整</option></select></label>
-                <label className="field"><span>表情・目つき</span><select value={coldExpression} onChange={e=>setColdExpression(e.target.value)}><option>無表情・ジト目</option><option>冷たい怒り</option><option>呆れ・失望</option><option>強く睨む</option></select></label>
-                <label className="field"><span>描写範囲</span><select value={coldFraming} onChange={e=>setColdFraming(e.target.value)}><option>上半身＋顔アップ</option><option>顔のクローズアップ</option><option>上半身</option><option>全身</option></select></label>
-                <label className="field"><span>視点</span><select value={coldView} onChange={e=>setColdView(e.target.value)}><option>一段下から見上げる</option><option>正面から見る</option><option>斜め下から見上げる</option></select></label>
-                <label className="field"><span>背景</span><select value={coldBackground} onChange={e=>setColdBackground(e.target.value)}><option>白背景</option><option>黒背景</option><option>単色背景</option><option>簡素な背景</option></select></label>
-                <label className="field"><span>文字色</span><select value={textColor} onChange={e=>setTextColor(e.target.value)}><option>黒</option><option>白</option><option>赤</option><option>濃紺</option></select></label>
+                <div className="field wide"><span>キャラクター再現</span><ChoiceTiles compact value={characterFidelity} options={['自然に調整','標準','最優先']} onChange={setCharacterFidelity}/></div>
+                <div className="field wide"><span>表情・目つき</span><ChoiceTiles value={coldExpression} options={['無表情・ジト目','冷たい怒り','呆れ・失望','強く睨む']} onChange={setColdExpression}/></div>
+                <div className="field wide"><span>描写範囲</span><ChoiceTiles value={coldFraming} options={['顔のクローズアップ','上半身＋顔アップ','上半身','全身']} onChange={setColdFraming}/></div>
+                <div className="field wide"><span>視点</span><ChoiceTiles value={coldView} options={['一段下から見上げる','正面から見る','斜め下から見上げる']} onChange={setColdView}/></div>
+                <div className="field wide"><span>背景</span><ChoiceTiles value={coldBackground} options={['白背景','黒背景','単色背景','簡素な背景']} onChange={setColdBackground}/></div>
+                <div className="field wide"><span>文字色</span><ChoiceTiles compact color value={textColor} options={['黒','白','赤','濃紺']} onChange={setTextColor}/></div>
                 <label className="field wide"><span>文字の配置</span><div className="segmented"><button className={textPlacement==='自動'?'selected':''} onClick={()=>setTextPlacement('自動')}>自動</button><button className={textPlacement==='上部'?'selected':''} onClick={()=>setTextPlacement('上部')}>上部</button><button className={textPlacement==='左右'?'selected':''} onClick={()=>setTextPlacement('左右')}>左右</button><button className={textPlacement==='顔の横'?'selected':''} onClick={()=>setTextPlacement('顔の横')}>顔の横</button></div></label>
               </div>}
             </>}
             {active.id!=='cold-anger'&&<>{active.id==='comic'&&<label className="field wide"><span>セリフ</span><div className="quote-input"><MessageSquareText size={17}/><span>「</span><input value={dialogue} onChange={e=>setDialogue(e.target.value)} placeholder="セリフを入力"/><span>」</span></div></label>}
             {active.id==='free'&&<label className="field wide"><span>追加したい指示</span><textarea value={custom} onChange={e=>setCustom(e.target.value)} placeholder="作りたい画像を自由に入力してください"/></label>}
             <div className="field"><span>文字</span><div className="segmented"><button className={textMode==='none'?'selected':''} onClick={()=>setTextMode('none')}>なし</button><button className={textMode==='dialogue'?'selected':''} onClick={()=>setTextMode('dialogue')}>セリフのみ</button><button className={textMode==='allow'?'selected':''} onClick={()=>setTextMode('allow')}>あり</button></div></div>
-            <label className="field"><span>画像比率</span><select value={ratio} onChange={e=>setRatio(e.target.value)}><option>16:9</option><option>1:1</option><option>9:16</option><option>4:3</option><option>3:4</option></select></label>
-            <label className="field"><span>画角</span><select value={framing} onChange={e=>setFraming(e.target.value)}><option>顔アップ</option><option>上半身</option><option>全身</option><option>ローアングル</option><option>俯瞰</option><option>斜め構図</option></select></label>
-            <label className="field"><span>表情</span><select value={expression} onChange={e=>setExpression(e.target.value)}><option>驚き</option><option>怒り</option><option>笑顔</option><option>真剣</option><option>コミカル</option><option>泣き</option></select></label>
+            <div className="field wide"><span>画像比率</span><ChoiceTiles compact value={ratio} options={['16:9','1:1','9:16','4:3','3:4']} onChange={setRatio}/></div>
+            <div className="field wide"><span>画角</span><ChoiceTiles value={framing} options={['顔アップ','上半身','全身','ローアングル','俯瞰','斜め構図']} onChange={setFraming}/></div>
+            <div className="field wide"><span>表情</span><ChoiceTiles value={expression} options={['驚き','怒り','笑顔','真剣','コミカル','泣き']} onChange={setExpression}/></div>
             <div className="field wide"><span>クイック追加</span><div className="chips">{['集中線','激しい演出','スピード線','強い遠近感','コミカル','映画的な光'].map(x=><button key={x} className={effects.includes(x)?'on':''} onClick={()=>toggle(x,effects,setEffects)}>{effects.includes(x)&&<Check size={12}/>} {x}</button>)}</div></div>
             <button className="details-toggle" onClick={()=>setDetailOpen(!detailOpen)}><Settings2 size={15}/>詳細設定<ChevronDown size={15} className={detailOpen?'rotated':''}/></button>
             {detailOpen&&<div className="details-panel">
